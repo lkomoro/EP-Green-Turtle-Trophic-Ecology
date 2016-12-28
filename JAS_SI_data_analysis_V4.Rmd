@@ -23,13 +23,13 @@ output: word_document
 **CCL_empirical** - curved carapace length-these are only the empirically collected values
 **CCL_combined** - curved carapace length-I pasted over all the empirical values, and then for ones that were missing empirical CCL but had **CCL_calc_fromSCL**, I added these in; so this is the combined variable that we'll use for size relationships
 
-Plan for figures:
-1. Carbon Histogram by Site
-2. Nitrogen Histogram by Site
-3. Boxplots, 2 panel (C then N)
-4. Ellipses
-5. Whisker plot (C vs. N)
-6. Map-large with insets of regions
+Plan for figures:  
+1. Carbon Histogram by Site  
+2. Nitrogen Histogram by Site  
+3. Boxplots, 2 panel (C then N)  
+4. Ellipses  
+5. Whisker plot (C vs. N)  
+6. Map-large with insets of regions  
 
 ##Setup
 ```{r setup, echo=FALSE,include=FALSE}
@@ -101,7 +101,7 @@ N+facet_wrap( ~ Location_Label, ncol=4)
 dev.off()
 ```
 
-2. Boxplots, 2 panel (C then N)
+####2. Boxplots, 2 panel (C then N)  
 ```{r boxplots, echo=TRUE}
 data$Region<-factor(data$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "Oceanic" , "EPac Islands"))
 reg_palette<-c("forest green","red", "purple","blue","orange")
@@ -131,13 +131,13 @@ dev.off()
 
 ```
 
-3. Ellipses
+####3. Ellipses  
 ```{r CvsN_ellipses, echo=TRUE}
 #come back to:
 #dataEllipse(data$d13C, data$d15N, data$Ordered_SITE, levels=c(0.95, 0.95), center.pch=19, center.cex=1.5, col=palette2)
 ```
 
-4. Whiskers
+####4. Whiskers  
 ```{r CvsN_whisker, echo=TRUE}
 
 CNsum_merge<-merge(data_Csum,data_Nsum)
@@ -156,7 +156,7 @@ ggplot(CNsum_merge, aes(x=mean_d13C,y=mean_d15N,fill=Region)) +
 dev.off()
 ```
 
-5. Map
+####5. Map  
 ```{r map, echo=TRUE}
 #using raster package for biooracle data
 library(raster)
@@ -186,6 +186,6 @@ points(xy, pch=21, cex=EPGT_latlong$mean_d13C_scale, bg="grey90")
 ```
 
 ```{r models, echo=TRUE}
-
+#to do-transfer from other script, expand etc.
 
 ```
