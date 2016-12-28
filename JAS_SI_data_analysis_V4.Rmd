@@ -33,7 +33,7 @@ Plan for figures:
 
 ##Setup
 ```{r setup, echo=FALSE,include=FALSE}
-setwd("~/Dropbox/KomoCheng/Seminoff_isotope_MS_transitionfiles")
+setwd("~/EPGT_stable_isotope_analysis")
 getwd()
 ```
 
