@@ -1,0 +1,191 @@
+---
+title: 'Seminoff EPac green turtle Stable Isotope Data Analysis'
+author: "Lisa Komoroske"
+date: '`r Sys.Date()`'
+output: word_document
+---
+##Metadata from Jeff
+**Site** - an ordinal code for each site  
+**Site code** - 3 letter code for each site  
+**Ordered_SITE** - combined site code with ordered # roughly North to South for graphing ordering
+**Location_Label** - shortened locatin names for graphing labeling purposes
+**Location** - location of turtle capture  
+**LAB ID** - self explanatory  
+**Collection Date** - self explanatory  
+**Run Date** - self explanatory  
+**%N** - elemental concentration of N.  that is, how much each sample is made up of nitrogen.  this is used as a diagnostic to know sample quality (anything outside of ~9-17% N raises a red flag)  
+**%C** - elemental concentration of C.  that is, how much each sample is made up of carbon.  this is used as a diagnostic to know sample quality (anything outside of ~40-60% C raises a red flag)  
+**d15N** - stable isotope value for N  
+**d13C** - stable isotope value for C  
+**Color** - rarely filled in. This is largely for the Galapagos and Colombia, where black turtles (eastern Pacific stock) and yellow turtles (west Pacific origins) co-exist.  Safe to say that anything that is not filled in here would be a ‘black’ morph.  
+**SCL** - straight carapace length 
+**CCL_calc_fromSCL** - used formula from Seminoff et al. 2003 to interpolate CCLs from SCLs
+**CCL_empirical** - curved carapace length-these are only the empirically collected values
+**CCL_combined** - curved carapace length-I pasted over all the empirical values, and then for ones that were missing empirical CCL but had **CCL_calc_fromSCL**, I added these in; so this is the combined variable that we'll use for size relationships
+
+Plan for figures:
+1. Carbon Histogram by Site
+2. Nitrogen Histogram by Site
+3. Boxplots, 2 panel (C then N)
+4. Ellipses
+5. Whisker plot (C vs. N)
+6. Map-large with insets of regions
+
+##Setup
+```{r setup, echo=FALSE,include=FALSE}
+setwd("~/Dropbox/KomoCheng/Seminoff_isotope_MS_transitionfiles")
+getwd()
+```
+
+##Load Required Libraries
+```{r libraries, echo=FALSE, include=FALSE}
+library(ggplot2)
+library(plyr)
+library(RColorBrewer)#can also use palettes, etc. l=defines darkness/lightness of colors see R graphics cookbook pgs255-263
+#additional code and plots from Latimer class for data QC and exploration:####
+library(MASS); library(lattice)
+library(lme4); library(lmerTest)
+```
+
+##Read in data
+```{r read_data, echo=FALSE,include=FALSE}
+data<-read.csv("CM Isotope Data UPDATED.csv")
+#updated 12-20-16 summary files reading in here to reflect new groupings, excluded data etc.
+data$Ordered_SITE<-factor(data$Ordered_SITE, levels =c("1-SGR_SBN","3-SDB","4-NGU","6-BMA","7-IPD","8-LOR","9-BLA","11-CIN", "13-DUL","14-PAR","15-MEJ","16-ISL","17-COC","18-GOR","19-IGP","20-IGE","21-IGD","22-IGZ","23-IGN","24-PPE"))
+
+#12-19-16 added: removing problematic sites and questionable values
+data_new<-subset(data, Ordered_SITE!="7-IPD" &Ordered_SITE!="8-LOR"&Ordered_SITE!="16-ISL"&Ordered_SITE!="22-IGZ"&Ordered_SITE!="23-IGN")
+data_new<-subset(data_new, Percent_N>=4 | is.na(data_new$Percent_N) )
+data_new$Collect_Date <- strptime(data_new$Collect_Date, "%m/%d/%Y")
+data_new$Run_Date <- strptime(data_new$Run_Date, "%m/%d/%Y")
+palette<-c("firebrick","forestgreen","blue4","purple","orange")
+data_new2<-subset(data_new,Habitat_Type!="oceanic") #exclude oceanic site
+data<-data_new
+
+data_Nsum<-read.csv("EPGT_d15Nsumc_LKedit.csv")
+str(data_Nsum) 
+data_Csum<-read.csv("EPGT_d13Csumc_LKedit.csv")
+str(data_Csum)
+```
+
+##Coarse data QC checks to note obvious data structure problems, etc.:
+```{r initial_QC, echo=TRUE}
+#see version 1 for more in depth QC checks
+summary(data)
+data$Ordered_SITE<-factor(data$Ordered_SITE)#reset variable to get rid of excluded sites in count
+table(data$Ordered_SITE) #frequency table
+```
+
+##Figures  
+####1. Faceted Histograms
+```{r histogram_fig, echo=TRUE}
+levels(data$Location_Label)
+#come back and remake with codes in parentheses(?)
+data$Location_Label<-factor(data$Location_Label, levels =c(
+"Long Beach, USA", "Bahia de los Angeles, GoC, MX", "Isla Gorgona, Colombia" ,"Oceanic Waters, Peru (Longline)",
+"San Diego Bay, USA", "Infiernillo Channel, GoC, MX" , "Bahia Elizabeth, Isabela, Galapagos","Pisco / Paracas Bay, Peru" ,
+"North Gulf of Ulloa, BCS, MX", "Golfo Dulce, Costa Rica", "Caleta Derek, Isabela, Galapagos","Mejillones, Chile" ,
+"Bahia Magdalena, BCS, MX", "Cocos Island, Costa Rica" , "Puta Espinosa, Fernandina, Galapagos"))
+C<-ggplot(data, aes(x=d13C)) + geom_histogram(alpha=.4, fill="yellow",colour="black")+theme_bw()+
+geom_vline(aes(xintercept=mean(d13C, na.rm=T)),    #Ignore NA values for mean
+           color="red", linetype="dashed", size=0.5)
+pdf("carbon_faceted_histogram.pdf", 12, 5)
+C+facet_wrap( ~ Location_Label, ncol=4)
+dev.off()
+
+N<-ggplot(data, aes(x=d15N)) + geom_histogram(alpha=.4, fill="forest green",colour="black")+theme_bw()+
+geom_vline(aes(xintercept=mean(d15N, na.rm=T)),    #Ignore NA values for mean
+           color="red", linetype="dashed", size=0.5)
+pdf("nitrogen_faceted_histogram.pdf", 12, 5)
+N+facet_wrap( ~ Location_Label, ncol=4)
+dev.off()
+```
+
+2. Boxplots, 2 panel (C then N)
+```{r boxplots, echo=TRUE}
+data$Region<-factor(data$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "Oceanic" , "EPac Islands"))
+reg_palette<-c("forest green","red", "purple","blue","orange")
+
+levels(data$Ordered_SITE)
+#for bottom to top order
+data$Ordered_SITE<-factor(data$Ordered_SITE,levels=c("1-SGR_SBN" ,"3-SDB",     "4-NGU" ,    "6-BMA" ,    "9-BLA"  ,   "11-CIN" ,   "13-DUL"  ,"14-PAR", "15-MEJ","24-PPE" ,"17-COC", "18-GOR",  "20-IGE" ,   "21-IGD"   ,"19-IGP" ))
+
+#for top to bottom order
+data$Ordered_SITE<-factor(data$Ordered_SITE,levels=c("19-IGP","21-IGD","20-IGE","18-GOR","17-COC","24-PPE","15-MEJ","14-PAR","13-DUL","11-CIN","9-BLA","6-BMA","4-NGU","3-SDB","1-SGR_SBN"))
+
+pdf("nitrogen_boxplot.pdf", 8, 5)
+ggplot(data, aes(y=d15N, x=Ordered_SITE,fill=Region)) + 
+  geom_boxplot(outlier.shape = 1,width=0.75) +theme_bw()+ guides(fill=FALSE)+
+  theme(panel.grid.major.x=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.y=element_line(colour="grey60",linetype="dashed"))+ scale_fill_manual(values=reg_palette,guide=FALSE)+xlab("Location ") +ylab("d15N") +coord_flip(ylim = c(5, 22))
+dev.off()
+
+pdf("carbon_boxplot.pdf", 8, 5)
+ggplot(data, aes(y=d13C, x=Ordered_SITE,fill=Region)) + 
+  geom_boxplot(outlier.shape = 1,width=0.75) +theme_bw()+ guides(fill=FALSE)+
+  theme(panel.grid.major.x=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.y=element_line(colour="grey60",linetype="dashed"))+ scale_fill_manual(values=reg_palette,guide=FALSE)+xlab("Location ") +ylab("d13C")+coord_flip()
+dev.off()
+
+```
+
+3. Ellipses
+```{r CvsN_ellipses, echo=TRUE}
+#come back to:
+#dataEllipse(data$d13C, data$d15N, data$Ordered_SITE, levels=c(0.95, 0.95), center.pch=19, center.cex=1.5, col=palette2)
+```
+
+4. Whiskers
+```{r CvsN_whisker, echo=TRUE}
+
+CNsum_merge<-merge(data_Csum,data_Nsum)
+CNsum_merge$SITENS<-paste(CNsum_merge$N_to_S_ordination, "-",CNsum_merge$Ordered_SITE)
+CNsum_merge$SITENS
+CNsum_merge$SITENS<-factor(CNsum_merge$SITENS,levels= c("1 - MEJ","2 - PAR","3 - PPE" ,"6 - IGD",
+"7 - IGE","8 - IGP","9 - GOR", "10 - COC", "11 - DUL","13 - BMA", "16 - NGU" ,"18 - CIN","19 - BLA","20 - SDB","21 - SGR_SBN")) 
+
+CNsum_merge$Region<-factor(CNsum_merge$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "Oceanic" , "EPac Islands"))
+
+pdf("C vs. N Whisker plot.pdf", 8, 5)
+ggplot(CNsum_merge, aes(x=mean_d13C,y=mean_d15N,fill=Region)) +
+  geom_errorbar(aes(ymin=mean_d15N-se_d15N,ymax=mean_d15N+se_d15N),size=0.25)+
+  geom_errorbarh(aes(xmin=mean_d13C-se_d13C,xmax=mean_d13C+se_d13C),size=0.25)+
+  geom_point(size=3, alpha=.9,shape=21)+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=reg_palette)+ylab("Mean d15N per Location")+xlab("Mean d13C per Location")+geom_text(aes(label=Ordered_SITE),hjust=1.5, vjust=0.5,size=3)
+dev.off()
+```
+
+5. Map
+```{r map, echo=TRUE}
+#using raster package for biooracle data
+library(raster)
+#read in raster data
+#asc is a file format
+quartz(4,4)
+sst.mean<-raster("sstmean.asc")
+sst.mean #like str for a raster
+
+EPGT_latlong<-read.csv("Lat_long_EPGT.csv")
+xy<-cbind(EPGT_latlong$Longitude,EPGT_latlong$Latitude)
+
+
+EPGT_latlong$mean_d15N_scale<-EPGT_latlong$mean_d15N*0.15
+plot(sst.mean,main="East Pacific", col=colorRampPalette(c("blue","purple", "yellow","red"))(255), 
+     legend.args=list(text='Degrees C', side=4,font=2, line=2.5, cex=0.8), xlim=c(-152,-58), ylim=c(-50,50))
+points(xy, pch=21, cex=EPGT_latlong$mean_d15N_scale, bg="grey90") 
+
+
+EPGT_latlong$mean_d13C_scale<-EPGT_latlong$mean_d13C*-0.15
+plot(sst.mean,main="East Pacific", col=colorRampPalette(c("blue","purple", "yellow","red"))(255), 
+     legend.args=list(text='Degrees C', side=4,font=2, line=2.5, cex=0.8), xlim=c(-152,-58), ylim=c(-50,50))
+points(xy, pch=21, cex=EPGT_latlong$mean_d13C_scale, bg="grey90") 
+
+#if want to annotate, edit this:
+#text(x=-88.5,y=0, labels="Shark Bait")
+```
+
+```{r models, echo=TRUE}
+
+
+```
