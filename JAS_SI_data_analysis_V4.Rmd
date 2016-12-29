@@ -132,7 +132,7 @@ dev.off()
 ```
 
 ####3. Ellipses  
-[1][stat_ellipse function info]
+[1][stat_ellipse function info]  
 **need to look back at notes to remember exactly what Jeff wanted**
 ```{r CvsN_ellipses, echo=TRUE}
 data_new2$Region<-factor(data_new2$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "EPac Islands"))
