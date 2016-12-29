@@ -8,7 +8,7 @@ output: word_document
 **Site** - an ordinal code for each site  
 **Site code** - 3 letter code for each site  
 **Ordered_SITE** - combined site code with ordered # roughly North to South for graphing ordering
-**Location_Label** - shortened locatin names for graphing labeling purposes
+**Location_Label** - shortened location names for graphing labeling purposes
 **Location** - location of turtle capture  
 **LAB ID** - self explanatory  
 **Collection Date** - self explanatory  
@@ -132,9 +132,27 @@ dev.off()
 ```
 
 ####3. Ellipses  
+[1][stat_ellipse function info]
+**need to look back at notes to remember exactly what Jeff wanted**
 ```{r CvsN_ellipses, echo=TRUE}
-#come back to:
-#dataEllipse(data$d13C, data$d15N, data$Ordered_SITE, levels=c(0.95, 0.95), center.pch=19, center.cex=1.5, col=palette2)
+data_new2$Region<-factor(data_new2$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "EPac Islands"))
+reg_palette1<-c("forest green","red", "purple","orange")
+
+#with data points and ellipse for each site by region
+ggplot(data_new2, aes(x=d13C,y=d15N,fill=Location_Label)) + geom_point(size=3, alpha=.8,shape=21,position=position_jitter(width=.5,height=.5))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+
+  stat_ellipse(geom="polygon",alpha=.5)+facet_wrap( ~ Region, ncol=2)
+
+#with just ellipse for each site by region 
+ggplot(data_new2, aes(x=d13C,y=d15N,fill=Location_Label)) + theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+
+  stat_ellipse(geom="polygon",alpha=.5)+facet_wrap( ~ Region, ncol=2)
+
+#with data and ellipse for each region
+ggplot(data_new2, aes(x=d13C,y=d15N, fill=Region)) + geom_point(size=3, alpha=.3,shape=21,position=position_jitter(width=.5,height=.5))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=reg_palette1)+
+  stat_ellipse(geom="polygon",alpha=.75)
+
+#with just ellipse for each region
+ggplot(data_new2, aes(x=d13C,y=d15N, fill=Region)) + theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=reg_palette1)+
+  stat_ellipse(geom="polygon",alpha=.5)#default settings assume multivariate t distribution and 0.95 CI
 ```
 
 ####4. Whiskers  
@@ -158,31 +176,78 @@ dev.off()
 
 ####5. Map  
 ```{r map, echo=TRUE}
-#using raster package for biooracle data
-library(raster)
-#read in raster data
-#asc is a file format
-quartz(4,4)
-sst.mean<-raster("sstmean.asc")
-sst.mean #like str for a raster
 
+# Load map packages
+library("maps")
+library("mapproj")
+library("mapplots")
+library("mapdata")
+library("ggmap")
+#don't need all these packages just for this one map, but I use them later for other map
+#stuff in the script that I am not including here
 EPGT_latlong<-read.csv("Lat_long_EPGT.csv")
-xy<-cbind(EPGT_latlong$Longitude,EPGT_latlong$Latitude)
+EPGT_latlong$mean_d15N_scale<-EPGT_latlong$mean_d15N*0.65
+#Entire Study Region Map
+description<-"EPacRegion"
+myLocation <- c(-160, -45, -62, 45)
+#bounding box lowerleftlon, lowerleftlat, upperrightlon, upperrightlat
 
+myMap <- get_map(location=myLocation, 
+source="stamen", maptype="watercolor", crop=TRUE) 
 
-EPGT_latlong$mean_d15N_scale<-EPGT_latlong$mean_d15N*0.15
-plot(sst.mean,main="East Pacific", col=colorRampPalette(c("blue","purple", "yellow","red"))(255), 
-     legend.args=list(text='Degrees C', side=4,font=2, line=2.5, cex=0.8), xlim=c(-152,-58), ylim=c(-50,50))
-points(xy, pch=21, cex=EPGT_latlong$mean_d15N_scale, bg="grey90") 
+pdf(paste(description, "_map", ".pdf",sep=""), width = 11, height = 8.5)
+ggmap(myMap) +
+  geom_point(aes(x = Longitude, y = Latitude), 
+             data = EPGT_latlong, fill = "grey20", 
+             size = 2.5,shape=21)
 
+dev.off()
 
-EPGT_latlong$mean_d13C_scale<-EPGT_latlong$mean_d13C*-0.15
-plot(sst.mean,main="East Pacific", col=colorRampPalette(c("blue","purple", "yellow","red"))(255), 
-     legend.args=list(text='Degrees C', side=4,font=2, line=2.5, cex=0.8), xlim=c(-152,-58), ylim=c(-50,50))
-points(xy, pch=21, cex=EPGT_latlong$mean_d13C_scale, bg="grey90") 
+#SoCal_Baja_inset
+description1<-"SoCal-Baja_region"
+SoCal_Baja <- c(-125, 20, -105, 40)
+#bounding box lowerleftlon, lowerleftlat, upperrightlon, upperrightlat
 
-#if want to annotate, edit this:
-#text(x=-88.5,y=0, labels="Shark Bait")
+myMap1 <- get_map(location=SoCal_Baja, 
+                 source="stamen", maptype="watercolor", crop=TRUE) 
+
+pdf(paste(description1, "_map", ".pdf",sep=""), width = 11, height = 8.5)
+ggmap(myMap1) +
+  geom_point(aes(x = Longitude, y = Latitude), 
+             data = EPGT_latlong, fill = "grey60", 
+             size = EPGT_latlong$mean_d15N_scale, shape=21)
+dev.off()
+
+#Cen-Islands_inset
+description2<-"Cen-Islands_region"
+Cen_Islands_region <- c(-95, -3, -75, 9.5)
+#bounding box lowerleftlon, lowerleftlat, upperrightlon, upperrightlat
+
+myMap2 <- get_map(location=Cen_Islands_region, 
+                  source="stamen", maptype="watercolor", crop=TRUE) 
+
+pdf(paste(description2, "_map", ".pdf",sep=""), width = 11, height = 8.5)
+ggmap(myMap2) +
+  geom_point(aes(x = Longitude, y = Latitude), 
+             data = EPGT_latlong, fill = "grey60", 
+             size = EPGT_latlong$mean_d15N_scale, shape=21)
+dev.off()
+
+#So America Region Map
+description3<-"SoAm_Region"
+SoAm_Region <- c(-90, -25, -68,-7)
+#bounding box lowerleftlon, lowerleftlat, upperrightlon, upperrightlat
+
+myMap3 <- get_map(location=SoAm_Region, 
+                 source="stamen", maptype="watercolor", crop=TRUE) 
+
+pdf(paste(description3, "_map", ".pdf",sep=""), width = 11, height = 8.5)
+ggmap(myMap3) +
+  geom_point(aes(x = Longitude, y = Latitude), 
+             data = EPGT_latlong, fill = "grey60", 
+             size = EPGT_latlong$mean_d15N_scale,shape=21)
+
+dev.off()
 ```
 
 
@@ -190,3 +255,5 @@ points(xy, pch=21, cex=EPGT_latlong$mean_d13C_scale, bg="grey90")
 ```{r models, echo=TRUE}
 #to do-transfer from other script, expand etc.
 ```
+
+[1] http://docs.ggplot2.org/current/stat_ellipse.html
