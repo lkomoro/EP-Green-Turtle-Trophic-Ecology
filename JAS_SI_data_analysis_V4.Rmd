@@ -185,7 +185,7 @@ points(xy, pch=21, cex=EPGT_latlong$mean_d13C_scale, bg="grey90")
 #text(x=-88.5,y=0, labels="Shark Bait")
 ```
 
-<<<<<<< HEAD
+
 ####6. Linear Models   
 ```{r models, echo=TRUE}
 #to do-transfer from other script, expand etc.
