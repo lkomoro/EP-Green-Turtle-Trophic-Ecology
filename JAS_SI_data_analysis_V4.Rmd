@@ -256,4 +256,4 @@ dev.off()
 #to do-transfer from other script, expand etc.
 ```
 
-[1] http://docs.ggplot2.org/current/stat_ellipse.html
+[1]: http://docs.ggplot2.org/current/stat_ellipse.html
