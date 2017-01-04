@@ -363,12 +363,4 @@ C1+facet_wrap( ~ Region, ncol=2)
 dev.off()
 ```
 
-Lisa to do in am:
-1. take output from each model and put into tables, and make appropriate graphs for each region (i.e., if site x size significant, should be seperate regression lines; if just main effects are signifcant should be one slope, etc.) paste in power point so can walk through results with Jeff of findings
--run tukey for if/when only site is significant and add to slides too
-
-2. Ask him about ellipses graphs and map formatting
-
-3. Ask him about if wants to do analyses looking at significant differences in variation
-
 [1]: http://docs.ggplot2.org/current/stat_ellipse.html
