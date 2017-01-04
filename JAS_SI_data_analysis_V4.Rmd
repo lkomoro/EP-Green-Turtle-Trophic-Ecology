@@ -137,24 +137,27 @@ dev.off()
 ```{r CvsN_ellipses, echo=TRUE}
 data_new2$Region<-factor(data_new2$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "EPac Islands"))
 reg_palette1<-c("forest green","red", "purple","orange")
+pal1<-c("yellow","deepskyblue","forestgreen","red","deepskyblue","yellow","deepskyblue","yellow","red","yellow","deepskyblue","red","forestgreen", "grey80")
+data_new2$Ordered_SITE<-factor(data_new2$Ordered_SITE)
 
 pdf("ellipse_facet1.pdf", 8, 5)
 #with data points and ellipse for each site by region-points on top
+levels(data_new2$Ordered_SITE)
 ggplot(data_new2, aes(x=d13C,y=d15N)) +
-  stat_ellipse(geom="polygon",alpha=.5, aes(fill=Location_Label),color="black")+ geom_point(size=3, alpha=.9,shape=21,position=position_jitter(width=.5,height=.5),aes(fill=Location_Label))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+facet_wrap( ~ Region, ncol=2)
+  stat_ellipse(geom="polygon",alpha=.5, aes(fill=Ordered_SITE),color="black")+ geom_point(size=3, alpha=.8,shape=21,position=position_jitter(width=.5,height=.5),aes(fill=Ordered_SITE))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=pal1)+facet_wrap( ~ Region, ncol=2)
 dev.off()
 
 pdf("ellipse_facet2.pdf", 8, 5)
 #with data points and ellipse for each site by region-points on bottom
 ggplot(data_new2, aes(x=d13C,y=d15N)) +
-   geom_point(size=3, alpha=.9,shape=21,position=position_jitter(width=.5,height=.5),aes(fill=Location_Label))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+
-stat_ellipse(geom="polygon",alpha=.5, aes(fill=Location_Label),color="black")+facet_wrap( ~ Region, ncol=2)
+   geom_point(size=3, alpha=.8,shape=21,position=position_jitter(width=.5,height=.5),aes(fill=Ordered_SITE))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+
+stat_ellipse(geom="polygon",alpha=.5, aes(fill=Ordered_SITE),color="black")+scale_fill_manual(values=pal1)+facet_wrap( ~ Region, ncol=2)
 dev.off()
 
 pdf("ellipse_facet3.pdf", 8, 5)
 #with just ellipse for each site by region 
 ggplot(data_new2, aes(x=d13C,y=d15N)) + theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+
-  stat_ellipse(geom="polygon",alpha=.5, aes(fill=Location_Label),color="black")+facet_wrap( ~ Region, ncol=2)
+  stat_ellipse(geom="polygon",alpha=.5, aes(fill=Ordered_SITE),color="black")+scale_fill_manual(values=pal1)+facet_wrap( ~ Region, ncol=2)
 dev.off()
 
 pdf("ellipse_region1.pdf", 8, 5)
@@ -275,10 +278,29 @@ dev.off()
 ```
 
 
-####6. Linear Models   
+####6. LMMs and Linear Models   
 ```{r models, echo=TRUE}
+#LMM region- Nitrogen
+region_Nm1<-lmer(data=data_new2, d15N~Region*CCL_combined+(1|Region/SITE_CODE))#interactive
+summary(region_Nm1)
+Anova(region_Nm1)
 
-#For each region seperately
+  #including oceanic
+  region_Nm2<-lmer(data=data, d15N~Region*CCL_combined+(1|Region/SITE_CODE))#interactive
+  summary(region_Nm2)
+  Anova(region_Nm2)
+
+#LMM region-Carbon
+region_Cm1<-lmer(data=data_new2, d13C~Region*CCL_combined+(1|Region/SITE_CODE))#interactive
+summary(region_Cm1)
+Anova(region_Cm1)
+
+  #including oceanic
+  region_Cm2<-lmer(data=data, d13C~Region*CCL_combined+(1|Region/SITE_CODE))#interactive
+  summary(region_Cm2)
+  Anova(region_Cm2)
+
+#Linear models-For each region seperately
 summary(data_new2$Region)
 SC<-subset(data_new2, Region=="SC-BC Pac Coast")        
 GC<-subset(data_new2, Region=="Gulf of Cal")
@@ -295,21 +317,50 @@ summary(GC_Nm1)
 summary(CSC_Nm1)
 summary(EPI_Nm1)
 
-SC_Cm1<-aov(data=SC, d15N~Ordered_SITE*CCL_combined)
-GC_Cm1<-aov(data=GC, d15N~Ordered_SITE*CCL_combined)
-CSC_Cm1<-aov(data=CSC, d15N~Ordered_SITE*CCL_combined)
-EPI_Cm1<-aov(data=EPI, d15N~Ordered_SITE*CCL_combined)
+SC_Nm2<-aov(data=SC, d15N~Ordered_SITE)
+GC_Nm2<-aov(data=GC, d15N~Ordered_SITE)
+CSC_Nm2<-aov(data=CSC, d15N~Ordered_SITE)
+EPI_Nm2<-aov(data=EPI, d15N~Ordered_SITE)
+
+summary(SC_Nm2)
+summary(GC_Nm2)
+summary(CSC_Nm2)
+summary(EPI_Nm2)
+
+SC_Cm1<-aov(data=SC, d13C~Ordered_SITE*CCL_combined)
+GC_Cm1<-aov(data=GC, d13C~Ordered_SITE*CCL_combined)
+CSC_Cm1<-aov(data=CSC, d13C~Ordered_SITE*CCL_combined)
+EPI_Cm1<-aov(data=EPI, d13C~Ordered_SITE*CCL_combined)
+
+SC_Cm2<-aov(data=SC, d13C~Ordered_SITE)
+GC_Cm2<-aov(data=GC, d13C~Ordered_SITE)
+CSC_Cm2<-aov(data=CSC, d13C~Ordered_SITE)
+EPI_Cm2<-aov(data=EPI, d13C~Ordered_SITE)
 
 summary(SC_Cm1)
+summary(SC_Cm2)
+
 summary(GC_Cm1)
+summary(GC_Cm2)
+
 summary(CSC_Cm1)
+summary(CSC_Cm2)
+
 summary(EPI_Cm1)
+summary(EPI_Cm2)
 
-#LMM region
-region_Nm1<-lmer(data=data_new2, d15N~Region*CCL_combined+(1|Region/SITE_CODE))  #interactive
-summary(region_Nm1)
-Anova(region_Nm1)
+#Corresponding visuals
+#Nitrogen
 
+pdf("nitrogen_faceted_scatter.pdf", 12, 8)
+N1<-ggplot(data_new2, aes(x=CCL_combined,y=d15N, fill=Ordered_SITE)) + geom_point(size=3, alpha=.8,shape=21,position=position_jitter(width=.5,height=.5))+theme_bw()+theme(axis.text.x  = element_text(angle=90, vjust=0.5))+geom_smooth(method=lm)+scale_fill_manual(values=pal1)
+N1+facet_wrap( ~ Region, ncol=2)
+dev.off()
+
+pdf("carbon_faceted_scatter.pdf", 12, 8)
+C1<-ggplot(data_new2, aes(x=CCL_combined,y=d13C, fill=Ordered_SITE)) + geom_point(size=3, alpha=.8,shape=21,position=position_jitter(width=.5,height=.5))+theme_bw()+theme(axis.text.x  = element_text(angle=90, vjust=0.5))+geom_smooth(method=lm)+scale_fill_manual(values=pal1)
+C1+facet_wrap( ~ Region, ncol=2)
+dev.off()
 ```
 
 Lisa to do in am:
