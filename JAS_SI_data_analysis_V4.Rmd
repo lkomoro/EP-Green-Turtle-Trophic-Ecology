@@ -133,7 +133,7 @@ dev.off()
 
 ####3. Ellipses  
 [stat_ellipse function info][1]  
-**notes say 'group by region 95% CI's, but not sure if mean ellipes by region or faceting by region, so doing both for now**
+*notes say 'group by region 95% CI's, but not sure if mean ellipes by region or faceting by region, so doing both for now*
 ```{r CvsN_ellipses, echo=TRUE}
 data_new2$Region<-factor(data_new2$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "EPac Islands"))
 reg_palette1<-c("forest green","red", "purple","orange")
