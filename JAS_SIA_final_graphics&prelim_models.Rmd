@@ -1,0 +1,377 @@
+---
+title: 'Seminoff EPac green turtle Stable Isotope Data Analysis'
+author: "Lisa Komoroske"
+date: '`r Sys.Date()`'
+output: word_document
+session info: '`sessionInfo(package = NULL)`'  
+---
+##Metadata from Jeff
+**Site** - an ordinal code for each site  
+**Site code** - 3 letter code for each site  
+**Ordered_SITE** - combined site code with ordered # roughly North to South for graphing ordering
+**Location_Label** - shortened location names for graphing labeling purposes
+**Location** - location of turtle capture  
+**LAB ID** - self explanatory  
+**Collection Date** - self explanatory  
+**Run Date** - self explanatory  
+**%N** - elemental concentration of N.  that is, how much each sample is made up of nitrogen.  this is used as a diagnostic to know sample quality (anything outside of ~9-17% N raises a red flag)  
+**%C** - elemental concentration of C.  that is, how much each sample is made up of carbon.  this is used as a diagnostic to know sample quality (anything outside of ~40-60% C raises a red flag)  
+**d15N** - stable isotope value for N  
+**d13C** - stable isotope value for C  
+**Color** - rarely filled in. This is largely for the Galapagos and Colombia, where black turtles (eastern Pacific stock) and yellow turtles (west Pacific origins) co-exist.  Safe to say that anything that is not filled in here would be a ‘black’ morph.  
+**SCL** - straight carapace length 
+**CCL_calc_fromSCL** - used formula from Seminoff et al. 2003 to interpolate CCLs from SCLs
+**CCL_empirical** - curved carapace length-these are only the empirically collected values
+**CCL_combined** - curved carapace length-I pasted over all the empirical values, and then for ones that were missing empirical CCL but had **CCL_calc_fromSCL**, I added these in; so this is the combined variable that we'll use for size relationships
+
+Plan for figures:  
+1. Carbon Histogram by Site  
+2. Nitrogen Histogram by Site  
+3. Boxplots, 2 panel (C then N)  
+4. Ellipses  
+5. Whisker plot (C vs. N)  
+6. Map-large with insets of regions  
+
+##Setup
+```{r setup, echo=FALSE,include=FALSE}
+setwd("~/EPGT_stable_isotope_analysis")
+getwd()
+```
+
+##Load Required Libraries
+```{r libraries, echo=FALSE, include=FALSE}
+library(ggplot2)
+library(plyr)
+library(RColorBrewer)#can also use palettes, etc. l=defines darkness/lightness of colors see R graphics cookbook pgs255-263
+#additional code and plots from Latimer class for data QC and exploration:####
+library(MASS); library(lattice)
+library(lme4); library(lmerTest);library(car)
+```
+
+##Read in data
+```{r read_data, echo=FALSE,include=FALSE}
+data<-read.csv("CM Isotope Data UPDATED_Jan122017.csv")
+#updated 12-20-16 summary files reading in here to reflect new groupings, excluded data etc.
+data$Ordered_SITE<-factor(data$Ordered_SITE, levels =c("1-SGR_SBN","3-SDB","4-NGU","6-BMA","7-IPD","8-LOR","9-BLA","11-CIN","12-NAV", "13-DUL","14-PAR","15-MEJ","16-ISL","17-COC","18-GOR","19-IGP","20-IGE","21-IGD","22-IGZ","23-IGN","24-PPE"))
+
+#12-19-16 added: removing problematic sites and questionable values
+data_new<-subset(data, Ordered_SITE!="7-IPD" &Ordered_SITE!="8-LOR"&Ordered_SITE!="16-ISL"&Ordered_SITE!="22-IGZ"&Ordered_SITE!="23-IGN")
+data_new<-subset(data_new, Percent_N>=5 | is.na(data_new$Percent_N) )
+data_new<-subset(data_new, Percent_N<=20 | is.na(data_new$Percent_N) )
+data_new$Collect_Date <- strptime(data_new$Collect_Date, "%m/%d/%Y")
+data_new$Run_Date <- strptime(data_new$Run_Date, "%m/%d/%Y")
+palette<-c("firebrick","forestgreen","deepskyblue3","purple","orange")
+data_new2<-subset(data_new,Habitat_Type!="oceanic") #exclude oceanic site
+data<-data_new
+
+data_Nsum<-read.csv("EPGT_d15Nsumc_LKedit.csv")
+str(data_Nsum) 
+data_Csum<-read.csv("EPGT_d13Csumc_LKedit.csv")
+str(data_Csum)
+```
+
+##Coarse data QC checks to note obvious data structure problems, etc.:
+```{r initial_QC, echo=TRUE}
+#see version 1 for more in depth QC checks
+summary(data)
+data$Ordered_SITE<-factor(data$Ordered_SITE)#reset variable to get rid of excluded sites in count
+table(data$Ordered_SITE) #frequency table
+```
+
+##Figures  
+####1. Faceted Histograms
+```{r histogram_fig, echo=TRUE}
+levels(data$Location_Label)
+#come back and remake with codes in parentheses(?)
+data$Location_Label<-factor(data$Location_Label, levels =c(
+"Long Beach, USA",               "Bahia de los Angeles, GoC, MX",          "Cocos Island, Costa Rica" ,     "Mejillones, Chile" , 
+"San Diego Bay, USA",            "Infiernillo Channel, GoC, MX" ,          "Isla Gorgona, Colombia" ,       "Bahia Elizabeth, Isabela, Galapagos",
+"North Gulf of Ulloa, BCS, MX",   "Navachiste",              "Oceanic Waters, Peru (Longline)",          "Caleta Derek, Isabela, Galapagos",  
+"Bahia Magdalena, BCS, MX",       "Golfo Dulce, Costa Rica",     "Pisco / Paracas Bay, Peru" ,           "Puta Espinosa, Fernandina, Galapagos"))
+C<-ggplot(data, aes(x=d13C)) + geom_histogram(alpha=.4, fill="yellow",colour="black")+theme_bw()+
+geom_vline(aes(xintercept=mean(d13C, na.rm=T)),    #Ignore NA values for mean
+           color="red", linetype="dashed", size=0.5)
+pdf("carbon_faceted_histogram.pdf", 12, 5)
+C+facet_wrap( ~ Location_Label, ncol=4)
+dev.off()
+
+N<-ggplot(data, aes(x=d15N)) + geom_histogram(alpha=.4, fill="forest green",colour="black")+theme_bw()+
+geom_vline(aes(xintercept=mean(d15N, na.rm=T)),    #Ignore NA values for mean
+           color="red", linetype="dashed", size=0.5)
+pdf("nitrogen_faceted_histogram.pdf", 12, 5)
+N+facet_wrap( ~ Location_Label, ncol=4)
+dev.off()
+```
+
+####2. Boxplots, 2 panel (C then N)  
+```{r boxplots, echo=TRUE}
+data$Region<-factor(data$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "Oceanic" , "EPac Islands"))
+reg_palette<-c("forest green","red", "purple","deepskyblue3","orange")
+
+levels(data$Ordered_SITE)
+#for bottom to top order
+data$Ordered_SITE<-factor(data$Ordered_SITE,levels=c("1-SGR_SBN" ,"3-SDB",     "4-NGU" ,    "6-BMA" ,    "9-BLA"  ,   "11-CIN" ,  "12-NAV", "13-DUL"  ,"14-PAR", "15-MEJ","24-PPE" ,"17-COC", "18-GOR",  "20-IGE" ,   "21-IGD"   ,"19-IGP" ))
+
+#for top to bottom order
+data$Ordered_SITE<-factor(data$Ordered_SITE,levels=c("19-IGP","21-IGD","20-IGE","18-GOR","17-COC","24-PPE","15-MEJ","14-PAR","13-DUL","12-NAV","11-CIN","9-BLA","6-BMA","4-NGU","3-SDB","1-SGR_SBN"))
+
+pdf("nitrogen_boxplot.pdf", 8, 5)
+ggplot(data, aes(y=d15N, x=Ordered_SITE,fill=Region)) + 
+  geom_boxplot(outlier.shape = 1,width=0.75) +theme_bw()+ guides(fill=FALSE)+
+  theme(panel.grid.major.x=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.y=element_line(colour="grey60",linetype="dashed"))+ scale_fill_manual(values=reg_palette,guide=FALSE)+xlab("Location ") +ylab("d15N") +coord_flip(ylim = c(5, 22))
+dev.off()
+
+pdf("carbon_boxplot.pdf", 8, 5)
+ggplot(data, aes(y=d13C, x=Ordered_SITE,fill=Region)) + 
+  geom_boxplot(outlier.shape = 1,width=0.75) +theme_bw()+ guides(fill=FALSE)+
+  theme(panel.grid.major.x=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.y=element_line(colour="grey60",linetype="dashed"))+ scale_fill_manual(values=reg_palette,guide=FALSE)+xlab("Location ") +ylab("d13C")+coord_flip()
+dev.off()
+
+```
+
+####3. Ellipses  
+[stat_ellipse function info][1]  
+*notes say 'group by region 95% CI's, but not sure if mean ellipes by region or faceting by region, so doing both for now*
+```{r CvsN_ellipses, echo=TRUE}
+data_new2$Region<-factor(data_new2$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "EPac Islands"))
+reg_palette1<-c("forest green","red", "purple","orange")
+pal1<-c("yellow","deepskyblue","forestgreen","red","deepskyblue","yellow","red","deepskyblue","yellow","red","deepskyblue","red","forestgreen", "grey80","yellow")
+data_new2$Ordered_SITE<-factor(data_new2$Ordered_SITE)
+
+pdf("ellipse_facet1.pdf", 8, 5)
+#with data points and ellipse for each site by region-points on top
+levels(data_new2$Ordered_SITE)
+ggplot(data_new2, aes(x=d13C,y=d15N)) +
+  stat_ellipse(geom="polygon",alpha=.5, aes(fill=Ordered_SITE),color="black")+ geom_point(size=3, alpha=.8,shape=21,position=position_jitter(width=.5,height=.5),aes(fill=Ordered_SITE))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=pal1)+facet_wrap( ~ Region, ncol=2)
+dev.off()
+
+pdf("ellipse_facet2.pdf", 8, 5)
+#with data points and ellipse for each site by region-points on bottom
+ggplot(data_new2, aes(x=d13C,y=d15N)) +
+   geom_point(size=3, alpha=.8,shape=21,position=position_jitter(width=.5,height=.5),aes(fill=Ordered_SITE))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+
+stat_ellipse(geom="polygon",alpha=.5, aes(fill=Ordered_SITE),color="black")+scale_fill_manual(values=pal1)+facet_wrap( ~ Region, ncol=2)
+dev.off()
+
+pdf("ellipse_facet3.pdf", 8, 5)
+#with just ellipse for each site by region 
+ggplot(data_new2, aes(x=d13C,y=d15N)) + theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+
+  stat_ellipse(geom="polygon",alpha=.5, aes(fill=Ordered_SITE),color="black")+scale_fill_manual(values=pal1)+facet_wrap( ~ Region, ncol=2)
+dev.off()
+
+pdf("ellipse_region1.pdf", 8, 5)
+#with data and ellipse for each region-point on top
+ggplot(data_new2, aes(x=d13C,y=d15N)) +
+  stat_ellipse(geom="polygon",alpha=.6, aes(fill=Region),color="black")+ 
+  geom_point(size=3, alpha=.9,shape=21,position=position_jitter(width=.5,height=.5),aes(fill=Region))+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=reg_palette1)
+dev.off()
+
+pdf("ellipse_region2.pdf", 8, 5)
+#with data and ellipse for each region-point on bottom
+ggplot(data_new2, aes(x=d13C,y=d15N)) +geom_point(size=3, alpha=.9,shape=21,position=position_jitter(width=.5,height=.5),aes(fill=Region))+
+  stat_ellipse(geom="polygon",alpha=.6, aes(fill=Region),color="black") +
+  theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=reg_palette1)
+dev.off()
+
+pdf("ellipse_region3.pdf", 8, 5)
+#with just ellipse for each region
+ggplot(data_new2, aes(x=d13C,y=d15N, fill=Region)) + theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=reg_palette1)+
+   stat_ellipse(geom="polygon",alpha=.6, aes(fill=Region),color="black")#default settings assume multivariate t distribution and 0.95 CI
+dev.off()
+```
+
+####4. Whiskers  
+```{r CvsN_whisker, echo=TRUE}
+
+CNsum_merge<-merge(data_Csum,data_Nsum)
+CNsum_merge$SITENS<-paste(CNsum_merge$N_to_S_ordination, "-",CNsum_merge$Ordered_SITE)
+CNsum_merge$SITENS
+CNsum_merge$SITENS<-factor(CNsum_merge$SITENS,levels= c("1 - MEJ","2 - PAR","3 - PPE" ,"6 - IGD",
+"7 - IGE","8 - IGP","9 - GOR", "10 - COC", "11 - DUL","12-NAV", "13 - BMA", "16 - NGU" ,"18 - CIN","19 - BLA","20 - SDB","21 - SGR_SBN")) 
+
+CNsum_merge$Region<-factor(CNsum_merge$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "Oceanic" , "EPac Islands"))
+
+pdf("C vs. N Whisker plot.pdf", 8, 5)
+ggplot(CNsum_merge, aes(x=mean_d13C,y=mean_d15N,fill=Region)) +
+  geom_errorbar(aes(ymin=mean_d15N-se_d15N,ymax=mean_d15N+se_d15N),size=0.25)+
+  geom_errorbarh(aes(xmin=mean_d13C-se_d13C,xmax=mean_d13C+se_d13C),size=0.25)+
+  geom_point(size=3, alpha=.9,shape=21)+theme_bw()+theme(axis.text.x  = element_text(angle=0, vjust=0.5))+scale_fill_manual(values=reg_palette)+ylab("Mean d15N per Location")+xlab("Mean d13C per Location")+geom_text(aes(label=Ordered_SITE),hjust=1.5, vjust=0.5,size=3)
+dev.off()
+```
+
+####5. Map  
+```{r map, echo=TRUE}
+
+# Load map packages
+library("maps")
+library("mapproj")
+library("mapplots")
+library("mapdata")
+library("ggmap")
+#don't need all these packages just for this one map, but I use them later for other map
+#stuff in the script that I am not including here
+
+#Usage:
+#get_map(location = c(lon = -95.3632715, lat = 29.7632836),
+#zoom = "auto", scale = "auto", 
+#maptype = c("terrain", "terrain-background", "satellite", "roadmap", 
+#"hybrid", "toner", "watercolor", "terrain-labels", "terrain-lines", "toner-2010", 
+#"toner-2011", "toner-background", "toner-hybrid", "toner-labels", "toner-lines", "toner-lite"), 
+#source = c("google", "osm", "stamen", "cloudmade"), 
+#force = ifelse(source == "google", TRUE, TRUE), messaging = FALSE, 
+#urlonly = FALSE, filename = "ggmapTemp", crop = TRUE, color = c("color", "bw"), language = "en-EN", api_key)
+
+EPGT_latlong<-read.csv("Lat_long_EPGT.csv")
+EPGT_latlong$mean_d15N_scale<-EPGT_latlong$mean_d15N*0.4
+EPGT_latlong$mean_d15N_scale_1<-EPGT_latlong$mean_d15N*0.75
+#Entire Study Region Map
+description<-"EPacRegion"
+myLocation <- c(-175, -45, -62, 45)
+#bounding box lowerleftlon, lowerleftlat, upperrightlon, upperrightlat
+
+myMap <- get_map(location=myLocation, source="google",
+                  maptype="hybrid", crop=TRUE) 
+
+pdf(paste(description, "_Gmap", ".pdf",sep=""), width = 11, height = 8.5)
+ggmap(myMap) +
+  geom_point(aes(x = Longitude, y = Latitude), 
+             data = EPGT_latlong, fill = "red", alpha=0.65, 
+             size = 6,shape=21)
+
+dev.off()
+
+#SoCal_Baja_inset
+description1<-"SoCal-Baja_region"
+SoCal_Baja <- c(-121, 22.5, -109, 35)
+#bounding box lowerleftlon, lowerleftlat, upperrightlon, upperrightlat
+
+myMap1 <- get_map(location=SoCal_Baja, 
+                  source="google", maptype="satellite", crop=TRUE) 
+
+pdf(paste(description1, "_Gmap", ".pdf",sep=""), width = 8, height = 8.5)
+ggmap(myMap1) +
+  geom_point(aes(x = Longitude, y = Latitude), 
+             data = EPGT_latlong,fill = "red", alpha=0.65, 
+             size = 16, shape=21)
+dev.off()
+
+#Cen-Islands_inset
+description2<-"Islands_region"
+Islands_region <- c(-100, -10, -75, 11)
+#bounding box lowerleftlon, lowerleftlat, upperrightlon, upperrightlat
+
+myMap2 <- get_map(location=Islands_region, 
+                  source="google", maptype="satellite", crop=TRUE) 
+
+pdf(paste(description2, "_Gmap", ".pdf",sep=""), width = 8, height = 8.5)
+ggmap(myMap2) +
+  geom_point(aes(x = Longitude, y = Latitude), 
+             data = EPGT_latlong, fill = "red", alpha=0.65,  
+             size = 16, shape=21)
+dev.off()
+
+#So America Region Map
+description3<-"SoAm_Region"
+SoAm_Region <- c(-81, -25, -68,-13)
+#bounding box lowerleftlon, lowerleftlat, upperrightlon, upperrightlat
+
+myMap3 <- get_map(location=SoAm_Region, 
+                  source="google", maptype="satellite", crop=TRUE) 
+
+pdf(paste(description3, "_Gmap", ".pdf",sep=""), width = 8, height = 8.5)
+ggmap(myMap3) +
+  geom_point(aes(x = Longitude, y = Latitude), 
+             data = EPGT_latlong, fill = "red", alpha=0.65, 
+             size = 16,shape=21)
+
+dev.off()
+
+```
+
+
+####6. Linear Models   (now just anovas)
+```{r models, echo=TRUE,,include=TRUE }
+
+#Linear models-For each region seperately
+summary(data_new2$Region)
+SC<-subset(data_new2, Region=="SC-BC Pac Coast")     
+GC<-subset(data_new2, Region=="Gulf of Cal")
+CSC<-subset(data_new2, Region== "Cen-SoAm Pac Coast") 
+EPI<- subset(data_new2, Region== "EPac Islands")
+
+SC_Nm2<-aov(data=SC, d15N~Ordered_SITE)
+GC_Nm2<-aov(data=GC, d15N~Ordered_SITE)
+CSC_Nm2<-aov(data=CSC, d15N~Ordered_SITE)
+EPI_Nm2<-aov(data=EPI, d15N~Ordered_SITE)
+
+summary(SC_Nm2)
+par(mfrow=c(2, 1))
+plot(SC_Nm2, which=1:2)
+dev.off()
+SC$Nresid = resid(SC_Nm2)
+ggplot(SC,aes(x=Ordered_SITE,y=Nresid))+geom_boxplot()+geom_point()
+
+summary(GC_Nm2)
+par(mfrow=c(2, 1))
+plot(GC_Nm2, which=1:2)
+dev.off()
+GC$Nresid = resid(GC_Nm2)
+ggplot(GC,aes(x=Ordered_SITE,y=Nresid))+geom_boxplot()+geom_point()
+
+summary(CSC_Nm2)
+par(mfrow=c(2, 1))
+plot(CSC_Nm2, which=1:2)
+dev.off()
+CSC$Nresid = resid(CSC_Nm2)
+ggplot(CSC,aes(x=Ordered_SITE,y=Nresid))+geom_boxplot()+geom_point()
+
+summary(EPI_Nm2)
+par(mfrow=c(2, 1))
+plot(EPI_Nm2, which=1:2)
+dev.off()
+EPI$Nresid = resid(EPI_Nm2)
+ggplot(EPI,aes(x=Ordered_SITE,y=Nresid))+geom_boxplot()+geom_point()
+
+#-------
+ #Carbon 
+
+SC_Cm2<-aov(data=SC, d13C~Ordered_SITE)
+GC_Cm2<-aov(data=GC, d13C~Ordered_SITE)
+CSC_Cm2<-aov(data=CSC, d13C~Ordered_SITE)
+EPI_Cm2<-aov(data=EPI, d13C~Ordered_SITE)
+
+
+summary(SC_Cm2)
+par(mfrow=c(2, 1))
+plot(SC_Cm2, which=1:2)
+dev.off()
+SC$Cresid = resid(SC_Cm2)
+ggplot(SC,aes(x=Ordered_SITE,y=Cresid))+geom_boxplot()+geom_point()
+
+summary(GC_Cm2)
+par(mfrow=c(2, 1))
+plot(GC_Cm2, which=1:2)
+dev.off()
+GC$Cresid = resid(GC_Cm2)
+ggplot(GC,aes(x=Ordered_SITE,y=Cresid))+geom_boxplot()+geom_point()
+
+summary(CSC_Cm2)
+par(mfrow=c(2, 1))
+plot(CSC_Cm2, which=1:2)
+dev.off()
+CSC$Cresid = resid(CSC_Cm2)
+ggplot(CSC,aes(x=Ordered_SITE,y=Cresid))+geom_boxplot()+geom_point() #moderate fanning, be aware-come back to
+
+summary(EPI_Cm2)
+par(mfrow=c(2, 1))
+plot(EPI_Cm2, which=1:2)
+dev.off()
+EPI$Cresid = resid(EPI_Cm2)
+ggplot(EPI,aes(x=Ordered_SITE,y=Cresid))+geom_boxplot()+geom_point()
+
+```
+
+[1]: http://docs.ggplot2.org/current/stat_ellipse.html
