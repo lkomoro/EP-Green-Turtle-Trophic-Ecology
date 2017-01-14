@@ -1,0 +1,127 @@
+---
+title: 'Seminoff EPac green turtle Stable Isotope Data Analysis'
+author: "Lisa Komoroske"
+date: '`r Sys.Date()`'
+output: word_document
+---
+
+##Setup
+```{r setup, echo=FALSE,include=FALSE}
+setwd("~/EPGT_stable_isotope_analysis")
+getwd()
+```
+
+##Load Required Libraries
+```{r libraries, echo=FALSE, include=FALSE}
+library(ggplot2)
+library(plyr)
+library(RColorBrewer)
+library(MASS); library(lattice)
+library(lme4); library(lmerTest);library(car)
+```
+
+##Read in data
+```{r read_data, echo=FALSE,include=FALSE}
+data<-read.csv("CM Isotope Data UPDATED_Jan122017.csv")
+#updated 12-20-16 summary files reading in here to reflect new groupings, excluded data etc.
+data$Ordered_SITE<-factor(data$Ordered_SITE, levels =c("1-SGR_SBN","3-SDB","4-NGU","6-BMA","7-IPD","8-LOR","9-BLA","11-CIN","12-NAV", "13-DUL","14-PAR","15-MEJ","16-ISL","17-COC","18-GOR","19-IGP","20-IGE","21-IGD","22-IGZ","23-IGN","24-PPE"))
+
+#12-19-16 added: removing problematic sites and questionable values
+data_new<-subset(data, Ordered_SITE!="7-IPD" &Ordered_SITE!="8-LOR"&Ordered_SITE!="16-ISL"&Ordered_SITE!="22-IGZ"&Ordered_SITE!="23-IGN")
+data_new<-subset(data_new, Percent_N>=5 | is.na(data_new$Percent_N) )
+data_new<-subset(data_new, Percent_N<=20 | is.na(data_new$Percent_N) )
+data_new$Collect_Date <- strptime(data_new$Collect_Date, "%m/%d/%Y")
+data_new$Run_Date <- strptime(data_new$Run_Date, "%m/%d/%Y")
+palette<-c("firebrick","forestgreen","deepskyblue3","purple","orange")
+data_new2<-subset(data_new,Habitat_Type!="oceanic") #exclude oceanic site
+data<-data_new
+
+```
+
+
+####6. Linear Models   (now just anovas)
+```{r models, echo=TRUE,,include=TRUE }
+summary(data)
+data$Ordered_SITE<-factor(data$Ordered_SITE)
+table(data$Ordered_SITE)
+
+#Linear models-For each region seperately
+summary(data_new2$Region)
+SC<-subset(data_new2, Region=="SC-BC Pac Coast")     
+GC<-subset(data_new2, Region=="Gulf of Cal")
+CSC<-subset(data_new2, Region== "Cen-SoAm Pac Coast") 
+EPI<- subset(data_new2, Region== "EPac Islands")
+
+SC_Nm2<-aov(data=SC, d15N~Ordered_SITE)
+GC_Nm2<-aov(data=GC, d15N~Ordered_SITE)
+CSC_Nm2<-aov(data=CSC, d15N~Ordered_SITE)
+EPI_Nm2<-aov(data=EPI, d15N~Ordered_SITE)
+
+summary(SC_Nm2)
+par(mfrow=c(2, 1))
+plot(SC_Nm2, which=1:2)
+dev.off()
+SC$Nresid = resid(SC_Nm2)
+ggplot(SC,aes(x=Ordered_SITE,y=Nresid))+geom_boxplot()+geom_point()
+
+summary(GC_Nm2)
+par(mfrow=c(2, 1))
+plot(GC_Nm2, which=1:2)
+dev.off()
+GC$Nresid = resid(GC_Nm2)
+ggplot(GC,aes(x=Ordered_SITE,y=Nresid))+geom_boxplot()+geom_point()
+
+summary(CSC_Nm2)
+par(mfrow=c(2, 1))
+plot(CSC_Nm2, which=1:2)
+dev.off()
+CSC$Nresid = resid(CSC_Nm2)
+ggplot(CSC,aes(x=Ordered_SITE,y=Nresid))+geom_boxplot()+geom_point()
+
+summary(EPI_Nm2)
+par(mfrow=c(2, 1))
+plot(EPI_Nm2, which=1:2)
+dev.off()
+EPI$Nresid = resid(EPI_Nm2)
+ggplot(EPI,aes(x=Ordered_SITE,y=Nresid))+geom_boxplot()+geom_point()
+
+#-------
+ #Carbon 
+
+SC_Cm2<-aov(data=SC, d13C~Ordered_SITE)
+GC_Cm2<-aov(data=GC, d13C~Ordered_SITE)
+CSC_Cm2<-aov(data=CSC, d13C~Ordered_SITE)
+EPI_Cm2<-aov(data=EPI, d13C~Ordered_SITE)
+
+
+summary(SC_Cm2)
+par(mfrow=c(2, 1))
+plot(SC_Cm2, which=1:2)
+dev.off()
+SC$Cresid = resid(SC_Cm2)
+ggplot(SC,aes(x=Ordered_SITE,y=Cresid))+geom_boxplot()+geom_point()
+
+summary(GC_Cm2)
+par(mfrow=c(2, 1))
+plot(GC_Cm2, which=1:2)
+dev.off()
+GC$Cresid = resid(GC_Cm2)
+ggplot(GC,aes(x=Ordered_SITE,y=Cresid))+geom_boxplot()+geom_point()
+
+summary(CSC_Cm2)
+par(mfrow=c(2, 1))
+plot(CSC_Cm2, which=1:2)
+dev.off()
+CSC$Cresid = resid(CSC_Cm2)
+ggplot(CSC,aes(x=Ordered_SITE,y=Cresid))+geom_boxplot()+geom_point() #moderate fanning, be aware-come back to
+
+summary(EPI_Cm2)
+par(mfrow=c(2, 1))
+plot(EPI_Cm2, which=1:2)
+dev.off()
+EPI$Cresid = resid(EPI_Cm2)
+ggplot(EPI,aes(x=Ordered_SITE,y=Cresid))+geom_boxplot()+geom_point()
+
+```
+
+[1]: http://docs.ggplot2.org/current/stat_ellipse.html
