@@ -3,6 +3,7 @@ title: 'Seminoff EPac green turtle Stable Isotope Data Analysis'
 author: "Lisa Komoroske"
 date: '`r Sys.Date()`'
 output: word_document
+session info: '`sessionInfo(package = NULL)`'
 ---
 ##Metadata from Jeff
 **Site** - an ordinal code for each site  
