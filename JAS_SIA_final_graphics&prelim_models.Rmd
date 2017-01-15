@@ -28,7 +28,7 @@ Plan for figures:
 1. Carbon Histogram by Site  
 2. Nitrogen Histogram by Site  
 3. Boxplots, 2 panel (C then N)  
-4. Ellipses  
+(4. Ellipses)  
 5. Whisker plot (C vs. N)  
 6. Map-large with insets of regions  
 
@@ -84,10 +84,11 @@ table(data$Ordered_SITE) #frequency table
 levels(data$Location_Label)
 #come back and remake with codes in parentheses(?)
 data$Location_Label<-factor(data$Location_Label, levels =c(
-"Long Beach, USA",               "Bahia de los Angeles, GoC, MX",          "Cocos Island, Costa Rica" ,     "Mejillones, Chile" , 
-"San Diego Bay, USA",            "Infiernillo Channel, GoC, MX" ,          "Isla Gorgona, Colombia" ,       "Bahia Elizabeth, Isabela, Galapagos",
-"North Gulf of Ulloa, BCS, MX",   "Navachiste",              "Oceanic Waters, Peru (Longline)",          "Caleta Derek, Isabela, Galapagos",  
-"Bahia Magdalena, BCS, MX",       "Golfo Dulce, Costa Rica",     "Pisco / Paracas Bay, Peru" ,           "Puta Espinosa, Fernandina, Galapagos"))
+"Long Beach, USA",               "Bahia de los Angeles, GoC, MX",   "Cocos Island, Costa Rica" ,   "Punta Espinosa, Fernandina, Galapagos" , 
+"San Diego Bay, USA",            "Infiernillo Channel, GoC, MX" , "Isla Gorgona, Colombia" ,      "Oceanic Waters, Peru (Longline)",  
+"North Gulf of Ulloa, BCS, MX",   "Navachiste, GoC, MX",  "Bahia Elizabeth, Isabela, Galapagos",         "Pisco / Paracas Bay, Peru" ,  
+"Bahia Magdalena, BCS, MX",       "Golfo Dulce, Costa Rica",  "Caleta Derek, Isabela, Galapagos",    "Mejillones, Chile"        ))
+#cocos - Gorgina - Bahia Elizabeth - caleta Derek.  For last column let's go punta e - oceanic Peru - pisco - chile
 C<-ggplot(data, aes(x=d13C)) + geom_histogram(alpha=.4, fill="yellow",colour="black")+theme_bw()+
 geom_vline(aes(xintercept=mean(d13C, na.rm=T)),    #Ignore NA values for mean
            color="red", linetype="dashed", size=0.5)
