@@ -126,7 +126,7 @@ N_mod_selection
 #summary(N_M2.1)
 #summary(N_M2.2)
 
-sjt.lmer(N_M1.1,N_M1.3)
+sjt.lmer(N_M1.1,N_M1.3)#Error for tables: perhaps sjPlots only works with lme4 package lmer() mixed models, and only gls() function for nlme? come back to
 
 vf<-read.csv("N_M1.1_variancefactors.csv")
 levels(vf$Location_Code)
