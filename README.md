@@ -1,2 +1,2 @@
-# EPGT_stable_isotope_LMK_JAS
-Project repository for EP green turtle stable isotope analyses LMK/JAS collaboration
+# Large-scale patterns in the trophic ecology of green turtles in the eastern Pacific Ocean
+Project repository for East Pacific green turtle stable isotope data analyses for Seminoff et al. manuscript
