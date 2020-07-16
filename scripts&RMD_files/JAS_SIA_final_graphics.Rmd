@@ -43,7 +43,7 @@ library(lme4); library(lmerTest);library(car)
 
 ### Read in data
 ```{r read_data, echo=FALSE,include=FALSE}
-data<-read.csv("../data/CM Isotope Data UPDATED_Jan122017.csv")
+data<-read.csv("../Files_local_repo_only/data/CM Isotope Data UPDATED_Jan122017.csv")
 #updated 12-20-16 summary files reading in here to reflect new groupings, excluded data etc.
 data$Ordered_SITE<-factor(data$Ordered_SITE, levels =c("1-SGR_SBN","3-SDB","4-NGU","6-BMA","7-IPD","8-LOR","9-BLA","11-CIN","12-NAV", "13-DUL","14-PAR","15-MEJ","16-ISL","17-COC","18-GOR","19-IGP","20-IGE","21-IGD","22-IGZ","23-IGN","24-PPE"))
 
@@ -57,9 +57,9 @@ palette<-c("firebrick","forestgreen","deepskyblue3","purple","orange")
 data_new2<-subset(data_new,Habitat_Type!="oceanic") #exclude oceanic site
 data<-data_new
 
-data_Nsum<-read.csv("../data/EPGT_d15Nsumc_LKedit.csv")
+data_Nsum<-read.csv("../Files_local_repo_only/data/EPGT_d15Nsumc_LKedit.csv")
 str(data_Nsum) 
-data_Csum<-read.csv("../data/EPGT_d13Csumc_LKedit.csv")
+data_Csum<-read.csv(".../Files_local_repo_only/data/EPGT_d13Csumc_LKedit.csv")
 str(data_Csum)
 ```
 
@@ -83,7 +83,7 @@ library("ggmap")
 #don't need all these packages just for this one map, but I use them later for other map
 #stuff in the script that I am not including here
 
-EPGT_latlong<-read.csv("../data/Lat_long_EPGT.csv")
+EPGT_latlong<-read.csv("../Files_local_repo_only/data/Lat_long_EPGT.csv")
 EPGT_latlong$mean_d15N_scale<-EPGT_latlong$mean_d15N*0.4
 EPGT_latlong$mean_d15N_scale_1<-EPGT_latlong$mean_d15N*0.75
 #Entire Study Region Map
@@ -175,7 +175,7 @@ g
 ```{r CSIA, echo=FALSE, message=FALSE }
 library(tidyr)
 library(dplyr)
-CSIA<-read.csv("../data/CSIA Raw data.csv")
+CSIA<-read.csv("../Files_local_repo_only/data/CSIA Raw data.csv")
 CSIA.long<-gather(CSIA,"amino.acid","nitrogen", 3:16) 
 
 N_mean<-tapply(CSIA.long$nitrogen, list(CSIA.long$amino.acid, CSIA.long$Location),mean,na.rm=TRUE)
@@ -242,7 +242,29 @@ N1
 ```
 
 #### Supplemental Figure 2. Variance Multiplication Factors  
-*[come back and insert code or redirect to script]*  
+```{r variance factors, echo=FALSE, message=FALSE}
+vf<-read.csv("../Files_local_repo_only/data/N_M1.1_variancefactors.csv")
+levels(vf$Location_Code)
+vf$Location_Code<-factor(vf$Location_Code,levels=c("LB","SDB","NGU","BMA","BLA","CIN","NAV","DUL","PAR","MEJ", "PPE", "COC", "GOR","IGE","IGD", "IGP"))
+levels(vf$Region)
+vf$Region<-factor(vf$Region,levels=c("SoCal-Baja Pacific Coast","Gulf of California"  ,"Central-S. America Pacific Coast","Oceanic" , "East Pacific Islands"   ))         
+
+palette1<-c("firebrick","firebrick","deepskyblue3","deepskyblue3","firebrick","firebrick","firebrick","grey70","firebrick","deepskyblue3","firebrick","firebrick","firebrick","firebrick","firebrick","firebrick")
+palette2<-c("forest green","red", "purple","deepskyblue3","orange")
+var1<-ggplot(vf,aes(x=Location_Code,y=Var_factor,fill=Location_Code))+geom_bar(stat="identity")+theme_bw()+xlab("Study Site")+ylab("d15N Variance Multiplication Factor")+geom_hline(yintercept=1, linetype="dashed")+scale_fill_manual(values=palette1)+guides(fill=FALSE)
+
+var1+ theme(axis.title.x = element_text(face="bold", size=14),
+           axis.text.x  = element_text(angle=45, vjust=0.5, size=12),
+           axis.title.y = element_text(face="bold", size=14),
+           axis.text.y  = element_text(angle=0, vjust=0.5, size=12))
+
+var2<-ggplot(vf,aes(x=Location_Code,y=Var_factor,fill=Region))+geom_point(size=6.5,shape=21)+theme_bw()+xlab("Study Site")+ylab("d15N Variance Multiplication Factor")+geom_hline(yintercept=1, linetype="dashed")+scale_fill_manual(values=palette2)+guides(fill=FALSE)
+
+var2+ theme(axis.title.x = element_text(face="bold", size=14),
+           axis.text.x  = element_text(angle=45, vjust=0.5, size=12),
+           axis.title.y = element_text(face="bold", size=14),
+           axis.text.y  = element_text(angle=0, vjust=0.5, size=12))+theme(panel.grid.major.x=element_line(colour="grey75",linetype="dashed"))
+```
 #### Supplemental Figure 3. Boxplots, 2 panel (C then N)  
 ```{r boxplots, echo=FALSE, message=FALSE}
 data$Region<-factor(data$Region,levels=c("SC-BC Pac Coast","Gulf of Cal","Cen-SoAm Pac Coast" , "Oceanic" , "EPac Islands"))
