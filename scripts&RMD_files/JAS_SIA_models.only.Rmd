@@ -37,11 +37,11 @@ data_new<-subset(data_new, Percent_N<=20 | is.na(data_new$Percent_N) )
 data_new$Collect_Date <- strptime(data_new$Collect_Date, "%m/%d/%Y")
 data_new$Run_Date <- strptime(data_new$Run_Date, "%m/%d/%Y")
 data<-data_new
-#data_new2<-subset(data_new,Habitat_Type!="oceanic") #exclude oceanic site
+data_new2<-subset(data_new,Habitat_Type!="oceanic") #exclude oceanic site; just for EDA linear models at end
 ```
 
 ####Hierarchical models: Nitrogen
-```{r hier_models, echo=FALSE, message=FALSE }
+```{r hier_models_N, echo=FALSE, message=FALSE }
 data<-within(data,Ordered_SITE<-relevel(Ordered_SITE, ref="1-SGR_SBN"))
 #data<-within(data,Region<-relevel(Region, ref="SC-BC Pac Coast"))
 
@@ -139,7 +139,7 @@ var2+ theme(axis.title.x = element_text(face="bold", size=14),
 ```
 
 ####Hierarchical models: Carbon
-```{r hier_models, echo=FALSE, message=FALSE }
+```{r hier_models_C, echo=FALSE, message=FALSE }
 #complete random effects model
 C_M0<-lme(d13C~1, random=~1| Region/Ordered_SITE, data=data)
 summary(C_M0)

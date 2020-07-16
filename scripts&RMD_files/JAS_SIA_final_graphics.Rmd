@@ -251,12 +251,6 @@ vf$Region<-factor(vf$Region,levels=c("SoCal-Baja Pacific Coast","Gulf of Califor
 
 palette1<-c("firebrick","firebrick","deepskyblue3","deepskyblue3","firebrick","firebrick","firebrick","grey70","firebrick","deepskyblue3","firebrick","firebrick","firebrick","firebrick","firebrick","firebrick")
 palette2<-c("forest green","red", "purple","deepskyblue3","orange")
-var1<-ggplot(vf,aes(x=Location_Code,y=Var_factor,fill=Location_Code))+geom_bar(stat="identity")+theme_bw()+xlab("Study Site")+ylab("d15N Variance Multiplication Factor")+geom_hline(yintercept=1, linetype="dashed")+scale_fill_manual(values=palette1)+guides(fill=FALSE)
-
-var1+ theme(axis.title.x = element_text(face="bold", size=14),
-           axis.text.x  = element_text(angle=45, vjust=0.5, size=12),
-           axis.title.y = element_text(face="bold", size=14),
-           axis.text.y  = element_text(angle=0, vjust=0.5, size=12))
 
 var2<-ggplot(vf,aes(x=Location_Code,y=Var_factor,fill=Region))+geom_point(size=6.5,shape=21)+theme_bw()+xlab("Study Site")+ylab("d15N Variance Multiplication Factor")+geom_hline(yintercept=1, linetype="dashed")+scale_fill_manual(values=palette2)+guides(fill=FALSE)
 
