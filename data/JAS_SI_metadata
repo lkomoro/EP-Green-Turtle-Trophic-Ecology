@@ -1,0 +1,27 @@
+Metadata
+
+Site - an ordinal code for each site so that I could keep them straight in some of my earlier analyses
+
+Site code - 3 letter code for each site
+
+Location - location of turtle capture
+
+LAB ID - self explanatory
+
+Collection Date - self explanatory
+
+Run Date - self explanatory
+
+%N - elemental concentration of N.  that is, how much each sample is made up of nitrogen.  this is used as a diagnostic to know sample quality (anything outside of ~9-17% N raises a red flag)
+
+%C - elemental concentration of C.  that is, how much each sample is made up of carbon.  this is used as a diagnostic to know sample quality (anything outside of ~40-60% C raises a red flag)
+
+d15N - stable isotope value for N
+
+d13C - stable isotope value for C
+
+Color - rarely filled in. This is largely for the Galapagos and Colombia, where black turtles (eastern Pacific stock) and yellow turtles (west pacific origins) co-exist.  Safe to say that anything that is not filled in here would be a ‘black’ morph.
+
+SCL - straight carapace length
+
+CCL - curved carapace length (if a Y is present, that means that we have the data in a different database. But in fact, for both SCL and CCL we likely have these data in other databases for a lot of the turtles. 
